@@ -35,14 +35,18 @@ const Header = styled.div`
   }
 `;
 
-const OutputArea = styled.div`
+const OutputArea = styled.textarea`
   background: #e7e7e7;
   flex-grow: 1;
   padding: 0.25rem;
   padding-top: 0.5rem;
+  font-size: 1.1rem;
+  font-style: italic;
 `;
-
-const OutputConsole = () => {
+interface OutputConsoleProps {
+  currentOutput: string;
+}
+const OutputConsole : React.FC<OutputConsoleProps> = ({currentOutput}) => {
   return (
     <Console>
       <Header>
@@ -52,7 +56,7 @@ const OutputConsole = () => {
           Export Output
         </button>
       </Header>
-      <OutputArea></OutputArea>
+      <OutputArea value={currentOutput} disabled></OutputArea>
     </Console>
   );
 };

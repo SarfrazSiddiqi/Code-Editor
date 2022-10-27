@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { BiEditAlt, BiExport, BiFullscreen, BiImport } from "react-icons/bi";
 import styled from "styled-components";
 
 import Select from "react-select";
 import CodeEditor from "./CodeEditor";
+import { ModalContext } from "../../context/ModalContext";
+import { RiFolderForbidFill } from "react-icons/ri";
+import { languageMap } from "../../context/PlaygroundContext";
+
 
 const StyledEditorContainer = styled.div`
   display: flex;
@@ -41,11 +45,13 @@ const LowerToolbar = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  button {
+  
+  button, label {
     background: transparent;
     outline: 0;
     border: 0;
     font-size: 1.15rem;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -68,6 +74,14 @@ const RunCode = styled.button`
   font-weight: 700;
   border-radius: 2rem;
 `;
+const SaveCode = styled.button`
+  padding: 0.4rem 1rem;
+  background-color: #0097d7 !important;
+  color: white;
+  font-weight: 700;
+  border-radius: 2rem;
+  border: 0;
+`;
 
 const SelectBars = styled.div`
   display: flex;
@@ -80,10 +94,32 @@ const SelectBars = styled.div`
     width: 11rem;
   }
 `;
+interface EditorContainerProps {
+   title: string;
+   currentLanguage: string;
+   setCurrentLanguage:(newLang: string) => void;
+   currentCode: string;
+   setCurrentCode:(newCode: string) =>void;
+   saveCode:()=> void;
+   folderId: string;
+   cardId: string;
+   runCode: () => void;
+}
 
-const EditorContainer = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState(null);
-  const [selectedTheme, setSelectedTheme] = useState(null);
+
+const EditorContainer: React.FC<EditorContainerProps> = ({
+    title,
+    currentLanguage,
+    setCurrentLanguage,
+    currentCode,
+    setCurrentCode,
+    folderId,
+    cardId,
+    saveCode,
+    runCode,
+})=> {
+   // import open modal function
+   const {openModal} = useContext(ModalContext)!;
 
   const languageOptions = [
     { value: "c++", label: "C++" },
@@ -103,25 +139,82 @@ const EditorContainer = () => {
     { value: "bespin", label: "bespin" },
   ];
 
+  const [selectedLanguage, setSelectedLanguage] = useState(() =>{
+     for(let i=0; i<languageOptions.length; i++){
+       if(languageOptions[i].value === currentLanguage) return languageOptions[i];
+     }
+
+     return languageOptions[0];
+  }     
+  );
+  const [selectedTheme, setSelectedTheme] = useState({
+    value: "githubDark",
+    label: "githubDark"
+  });
+
+  
+
   const handleChangeLanguage = (selectedOption: any) => {
     setSelectedLanguage(selectedOption);
+    setCurrentLanguage(selectedOption.value);
+    setCurrentCode(languageMap[selectedOption.value].defaultCode);
   };
 
   const handleChangeTheme = (selectedOption: any) => {
     setSelectedTheme(selectedOption);
   };
 
+   const getFile = (e: any) => {
+     const input = e.target; 
+      // input ={
+      //   files : ["file1.txt", "file2.txt"...]
+      // }
+
+     if("files" in input && input.files.length > 0){
+       placeFileContent(input.files[0]);
+     }
+   }
+  const placeFileContent =(file: any) =>{
+      readFileContent(file).then((content) =>{
+         setCurrentCode(content as string)
+      })
+      .catch((error) =>console.log(error));
+  };
+
+  function readFileContent(file: any) {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = (event) => resolve(event!.target!.result);
+      reader.onerror = (error) => reject(error);
+      reader.readAsText(file);
+    });
+  }
+
   return (
     <StyledEditorContainer>
       {/* Upper Toolbar Begins */}
       <UpperToolbar>
         <Title>
-          <h3>Stack Implementation</h3>
-          <button>
+          <h3>{title}</h3>
+          <button onClick={() =>{
+            // oen a modal to do edit card title
+            openModal({
+              value: true,
+              type: "1",
+              identifer: {
+                folderId: folderId,
+                cardId: cardId
+
+              }
+            })
+          }}>
             <BiEditAlt />
           </button>
         </Title>
         <SelectBars>
+        <SaveCode onClick={()=>{
+           saveCode();
+        }}>Save Code</SaveCode>
           <Select
             value={selectedLanguage}
             options={languageOptions}
@@ -137,7 +230,12 @@ const EditorContainer = () => {
       {/* Upper Toolbar Ends */}
 
       {/* Code Editor Begins */}
-      <CodeEditor />
+      < CodeEditor
+        currentLanguage={selectedLanguage.value}
+        currentTheme={selectedTheme.value}
+        currentCode={currentCode}
+        setCurrentCode={setCurrentCode}
+        />
       {/* Code Editor Ends */}
 
       {/* Lower Toolbar Begins */}
@@ -147,15 +245,23 @@ const EditorContainer = () => {
             <BiFullscreen />
             Full Screen
           </button>
-          <button>
+          <label>
+            <input type='file' 
+            accept=".txt" 
+            style={{display: "none"}} 
+            onChange={(e) =>{
+              getFile(e);
+            }} />
             <BiImport /> Import Code
-          </button>
-          <button>
+          </label>
+          <label>
             <BiExport />
             Export Code
-          </button>
+          </label>
         </ButtonGroup>
-        <RunCode>Run Code</RunCode>
+        <RunCode onClick={() =>{
+           runCode();
+        }}>Run Code</RunCode>
       </LowerToolbar>
       {/* Lower Toolbar Ends */}
     </StyledEditorContainer>
