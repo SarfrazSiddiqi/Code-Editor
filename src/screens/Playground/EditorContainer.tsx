@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { BiEditAlt, BiExport, BiFullscreen, BiImport } from "react-icons/bi";
 import styled from "styled-components";
-
+import { FullScreen, useFullScreenHandle } from "react-full-screen";
 import Select from "react-select";
 import CodeEditor from "./CodeEditor";
 import { ModalContext } from "../../context/ModalContext";
@@ -190,6 +190,24 @@ const EditorContainer: React.FC<EditorContainerProps> = ({
     });
   }
 
+  //  Export function
+  const handleExport = () =>{
+    const blob = new Blob([currentCode], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.download = "New-Document.txt";
+    link.href = url;
+    link.click();
+
+  }
+
+  // full Screen
+  // const handle = useFullScreenHandle();
+  const handleFullScreen = ()=>{
+    document.body.requestFullscreen();
+  }
+  
   return (
     <StyledEditorContainer>
       {/* Upper Toolbar Begins */}
@@ -241,10 +259,19 @@ const EditorContainer: React.FC<EditorContainerProps> = ({
       {/* Lower Toolbar Begins */}
       <LowerToolbar>
         <ButtonGroup>
-          <button>
+         <button onClick={handleFullScreen}>
             <BiFullscreen />
             Full Screen
-          </button>
+            </button> 
+            {/* <FullScreen handle={handle}>
+            < CodeEditor
+        currentLanguage={selectedLanguage.value}
+        currentTheme={selectedTheme.value}
+        currentCode={currentCode}
+        setCurrentCode={setCurrentCode}
+        />
+      </FullScreen> */}
+      
           <label>
             <input type='file' 
             accept=".txt" 
@@ -254,10 +281,10 @@ const EditorContainer: React.FC<EditorContainerProps> = ({
             }} />
             <BiImport /> Import Code
           </label>
-          <label>
+          <button onClick={handleExport}>
             <BiExport />
             Export Code
-          </label>
+          </button> 
         </ButtonGroup>
         <RunCode onClick={() =>{
            runCode();
